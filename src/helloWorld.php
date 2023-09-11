@@ -24,5 +24,8 @@
 
 
     $password = getenv('PASSWORD');
+    echo $password;
+
+    
 
 ?>
