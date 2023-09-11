@@ -8,6 +8,8 @@
     require "./../.env";
 
     $requestMethod = $_SERVER["REQUEST_METHOD"];
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $uri = explode('/', $uri);
     
     
     $servername = "localhost";
@@ -19,13 +21,32 @@
         // set the PDO error mode to exception
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
-        if ($requestMethod == "GET") {
-            $statement = $conn->query("select * from pips");
-            $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
-            echo json_encode($result);    
-        } else {
-            echo "You sent a POST request, so you get no data, hahaha!";
+        if ($uri[1] == "pips") {
+            if ($requestMethod == "GET") {
+                $statement = $conn->query("select * from pips");
+                $result = $statement->fetchAll(\PDO::FETCH_ASSOC);
+                echo json_encode($result);    
+            } else if ($requestMethod == "POST") {
+                $input = (array) json_decode(file_get_contents('php://input'), TRUE);
+
+                $data = [
+                    'text' => $input['text'],
+                    'username' => $input['username']
+               ];
+
+                $sql = 'INSERT INTO pips VALUES(default, :text, :username)';
+                $statement = $conn->prepare($sql);
+                $statement->execute($data);
+
+                $id = $conn->lastInsertId();
+                $pip = (object) $input;
+                $pip->idpip = $id;
+
+                echo json_encode($pip);
+                // echo "You sent a POST request, so you get no data, hahaha!";
+            }
         }
+        
         
         
     } catch(PDOException $e) {
